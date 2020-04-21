@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.util.function.Predicate;
 
 import javax.swing.JPanel;
 
@@ -13,17 +12,20 @@ import game.res.Configurations;
 
 public class BoardPanel extends JPanel {
 
-	// private ArrayList<Box> runway;
 	BoardData bdata;
 
-	public BoardPanel(BoardData bd) {
+	public BoardPanel(BoardData bd, Controls ctrls) {
 		this.bdata = bd;
 		setPreferredSize(new Dimension(Configurations.W, Configurations.H));
+		this.addMouseListener(ctrls);
 	}
 
 	public void updateBoard(boolean immediate) {
 		if (immediate)
-			paintImmediately(0, 0, Configurations.W, Configurations.H);
+			if (bdata.isOnlyUpdateDiceArea())
+				paintImmediately(Dice.xcoord, Dice.ycoord, Dice.size, Dice.size);
+			else
+				paintImmediately(0, 0, Configurations.W, Configurations.H);
 		else
 			repaint();
 	}
@@ -47,7 +49,7 @@ public class BoardPanel extends JPanel {
 		g.fillRect(0, 0, Configurations.W, Configurations.H);
 	}
 
-	public void drawBases(Graphics g) {
+	private void drawBases(Graphics g) {
 		int s = Configurations.S;
 		bdata.getBases().forEach(b -> {
 			g.setColor(b.color);
@@ -62,18 +64,22 @@ public class BoardPanel extends JPanel {
 			g.drawRect((b.xcord + 1) * s, (b.ycord + 1) * s, b.size * 4, b.size * 4);
 			// drawCoordinates(g, b);
 		});
-		bdata.getBaseInternals().forEach(b -> {
-			int x = b.xcord;// * s + s / 2;
-			int y = b.ycord;// * s + s / 2;
-			g.setColor(b.color);
-			g.fillRoundRect(x, y, b.size, b.size, 1, 1);
-			g.setColor(Color.black);
-			g.drawRect(x, y, b.size, b.size);
-			// drawCoordinates(g, b);
+
+		bdata.getBaseInternals().values().forEach(boxes -> {
+//		bdata.getBaseInternals().forEach(b -> {
+			for (Box b : boxes) {
+				int x = b.xcord;// * s + s / 2;
+				int y = b.ycord;// * s + s / 2;
+				g.setColor(b.color);
+				g.fillRoundRect(x, y, b.size, b.size, 1, 1);
+				g.setColor(Color.black);
+				g.drawRect(x, y, b.size, b.size);
+				// drawCoordinates(g, b);
+			}
 		});
 	}
 
-	public void drawPieces(Graphics g) {
+	private void drawPieces(Graphics g) {
 		bdata.getPieces().values().forEach(ps -> {
 			for (Piece p : ps) {
 				drawPiece(g, p, 2, 3, Color.black, true);
@@ -82,13 +88,6 @@ public class BoardPanel extends JPanel {
 				drawPiece(g, p, 11, 2, Color.white, false);
 			}
 		});
-//		for (Piece[] row : bdata.getPieces())
-//			for (Piece p : row) {
-//				drawPiece(g, p, 2, 3, Color.black, true);
-//				drawPiece(g, p, 5, 2, Color.white, false);
-//				drawPiece(g, p, 8, 1, p.color, true);
-//				drawPiece(g, p, 11, 2, Color.white, false);
-//			}		
 	}
 
 	private void drawPiece(Graphics g, Piece p, int start, int stroke, Color c, boolean fill) {
@@ -130,12 +129,23 @@ public class BoardPanel extends JPanel {
 
 	@Override
 	public void paint(Graphics g) {
+		if(bdata.isOnlyUpdateDiceArea()) {
+			drawDiceArea(g);
+			drawRunway(g);
+			return;
+		}
 		clearScreen(g);
+		drawDiceArea(g);
 		drawBases(g);
 		drawRunway(g);
 		// drawStartingPoints(g);
 		drawPieces(g);
 		// drawEntryPoints(g);
+	}
+
+	private void drawDiceArea(Graphics g) {
+		g.setColor(Color.white);
+		g.fillRect(Dice.xcoord, Dice.ycoord, Dice.size, Dice.size);
 	}
 
 	private void drawCoordinates(Graphics g, Box b) {

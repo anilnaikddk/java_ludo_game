@@ -9,7 +9,7 @@ public class Box {
 	public int ycord;
 	public int size = Configurations.S;
 	public Color color = Color.white;
-	public int pos;
+	public int pos = -1;
 
 	public Box(int x, int y) {
 		this.xcord = x;
